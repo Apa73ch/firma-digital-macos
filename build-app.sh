@@ -32,6 +32,16 @@ cat > "$APP/Contents/Info.plist" <<'EOF'
 </plist>
 EOF
 
+xattr -cr "$APP" dist/firmar-cli
 codesign --force --deep --sign - "$APP"
 codesign --force --sign - dist/firmar-cli
+
+# Zip para el release (sin atributos extendidos, que romperían la firma al descomprimir).
+STAGE=$(mktemp -d)
+ditto --norsrc --noextattr --noacl "$APP" "$STAGE/Firma Digital.app"
+ditto --norsrc --noextattr --noacl dist/firmar-cli "$STAGE/firmar-cli"
+rm -f dist/FirmaDigital-macOS.zip
+(cd "$STAGE" && COPYFILE_DISABLE=1 zip -qry -X "$OLDPWD/dist/FirmaDigital-macOS.zip" "Firma Digital.app" firmar-cli)
+rm -rf "$STAGE"
 echo "Listo: $(pwd)/$APP"
+echo "Release: $(pwd)/dist/FirmaDigital-macOS.zip"
